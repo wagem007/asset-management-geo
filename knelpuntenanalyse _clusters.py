@@ -34,16 +34,16 @@ class Cluster(object):
         self.rowlist = []
 
     def overlaps(self, query_shape, query_verdieping):
-        if not self.shape:
+        if self.shape is None:
             return True
-        if self.shape.disjoint(query_shape):
-            arcpy.AddMessage("NO OVERLAP!")
+        if self.shape.disjoint(query_shape) or self.verdieping != query_verdieping:
             return False
         return True
 
     def add(self, shape, row, verdieping):
         if self.shape:
-            self.shape = self.shape.union(shape)
+            temp = self.shape.union(shape)
+            self.shape = temp
         else:
             self.shape = copy.deepcopy(shape)
             self.verdieping = verdieping
@@ -65,7 +65,7 @@ class Clusterbuilder(object):
         self.search_tuple = ['SHAPE@']
         self.search_tuple += self.search_meta
 
-        self.fields_out = zip(self.meta_fields, field_types)
+        self.fields_out = list(zip(self.meta_fields, field_types))
 
         self.meta_fields = ('SHAPE@', ) + self.meta_fields
 
@@ -110,6 +110,7 @@ class Clusterbuilder(object):
         for i, cluster in enumerate(self.clusters):
             fl_name = "{1}_{0:0>5}".format(i, self.fl_prefix)
             arcpy.CreateFeatureclass_management(self.workspace, fl_name, 'POLYGON')
+
             for field, ftype in self.fields_out:
                 arcpy.AddMessage("Adding field {0} of type {1} to {2}".format(field, ftype, fl_name))
                 arcpy.AddField_management(fl_name, field, ftype)
